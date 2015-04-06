@@ -12,7 +12,7 @@ describe Warden::OAuth2::Strategies::ResourceOwnerPasswordCredentials do
   describe '#valid?' do
     it 'returns false if the grant type is not specified' do
       allow(subject).to receive(:params).and_return({})
-      expect(subject).not_to be_valid
+      expect(subject).to_not be_valid
     end
 
     it 'returns true if the grant type is password' do
@@ -22,7 +22,7 @@ describe Warden::OAuth2::Strategies::ResourceOwnerPasswordCredentials do
 
     it 'returns false if the grant type is not password' do
       allow(subject).to receive(:params).and_return('grant_type' => 'whatever')
-      expect(subject).not_to be_valid
+      expect(subject).to_not be_valid
     end
   end
 
@@ -34,16 +34,18 @@ describe Warden::OAuth2::Strategies::ResourceOwnerPasswordCredentials do
       subject._run!
       expect(subject.error_status).to eq(401)
       expect(subject.message).to eq('invalid_client')
-      expect(subject.error_description).not_to be_empty
+      expect(subject.error_description).to_not be_empty
     end
+
     it 'should fail if username and password are not provided' do
       allow(client_model).to receive_messages(locate: double)
       allow(subject).to receive(:params).and_return('client_id' => 'awesome')
       subject._run!
       expect(subject.error_status).to eq(400)
       expect(subject.message).to eq('invalid_request')
-      expect(subject.error_description).not_to be_empty
+      expect(subject.error_description).to_not be_empty
     end
+
     it 'should pass username and password to validation check' do
       client_instance = double(:client_instance)
       allow(client_model).to receive_messages(locate: client_instance)
@@ -53,13 +55,28 @@ describe Warden::OAuth2::Strategies::ResourceOwnerPasswordCredentials do
 
       subject._run!
     end
-    it 'should succeed if a client is around and valid' do
-      client_instance = double(:client_instance, valid?: true)
-      allow(client_model).to receive_messages(locate: client_instance)
-      allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'username', 'password' => 'correct')
-      subject._run!
-      expect(subject.user).to eq(client_instance)
-      expect(subject.result).to eq(:success)
+
+    context 'when the client is valid and confirmed' do
+      it 'should succeed' do
+        client_instance = double(:client_instance, valid?: true, confirmed?: true)
+        allow(client_model).to receive_messages(locate: client_instance)
+        allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'username', 'password' => 'correct')
+        subject._run!
+        expect(subject.user).to eq(client_instance)
+        expect(subject.result).to eq(:success)
+      end
+    end
+
+    context 'when the client is valid but not confirmed' do
+      it 'should succeed' do
+        client_instance = double(:client_instance, valid?: true, confirmed?: false)
+        allow(client_model).to receive_messages(locate: client_instance)
+        allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'username', 'password' => 'correct')
+        subject._run!
+        expect(subject.error_status).to eq(401)
+        expect(subject.message).to eq('invalid_client')
+        expect(subject.error_description).to_not be_empty
+      end
     end
   end
 end

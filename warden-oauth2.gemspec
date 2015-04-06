@@ -2,16 +2,15 @@
 require File.expand_path('../lib/warden/oauth2/version', __FILE__)
 
 Gem::Specification.new do |gem|
-  gem.authors       = ['AirService']
-  gem.email         = ['devs@airservice.co']
+  gem.authors       = ['aceunreal']
   gem.description   = 'OAuth 2.0 strategies for Warden'
   gem.summary       = 'OAuth 2.0 strategies for Warden'
-  gem.homepage      = 'https://github.com/airservice/warden-oauth2'
+  gem.homepage      = 'https://github.com/aceunreal/warden-oauth2'
 
   gem.executables   = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
   gem.files         = `git ls-files`.split("\n")
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  gem.name          = 'warden-oauth2-strategies'
+  gem.name          = 'warden-oauth2'
   gem.require_paths = ['lib']
   gem.version       = Warden::OAuth2::VERSION
   gem.licenses      = ['MIT']
