@@ -27,14 +27,30 @@ describe Warden::OAuth2::Strategies::ResourceOwnerPasswordCredentials do
   end
 
   describe '#authenticate!' do
-    it 'should fail if a client is around but not valid' do
-      client_instance = double(:client_instance, valid?: false)
-      allow(client_model).to receive_messages(locate: client_instance)
-      allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'someuser', 'password' => 'incorrect')
-      subject._run!
-      expect(subject.error_status).to eq(401)
-      expect(subject.message).to eq('invalid_client')
-      expect(subject.error_description).to_not be_empty
+    context 'when the client is around but not valid' do
+      context 'when the client is confirmed' do
+        it 'should fail with incorrect username or password message' do
+          client_instance = double(:client_instance, valid?: false, confirmed?: true)
+          allow(client_model).to receive_messages(locate: client_instance)
+          allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'someuser', 'password' => 'incorrect')
+          subject._run!
+          expect(subject.error_status).to eq(401)
+          expect(subject.message).to eq('invalid_client')
+          expect(subject.error_description).to eq('Incorrect username or password')
+        end
+      end
+
+      context 'when the client is not confirmed' do
+        it 'should fail with a please confirm your account message' do
+          client_instance = double(:client_instance, valid?: false, confirmed?: false)
+          allow(client_model).to receive_messages(locate: client_instance)
+          allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'someuser', 'password' => 'incorrect')
+          subject._run!
+          expect(subject.error_status).to eq(401)
+          expect(subject.message).to eq('invalid_client')
+          expect(subject.error_description).to eq('Please confirm your account prior to use our service')
+        end
+      end
     end
 
     it 'should fail if username and password are not provided' do
@@ -51,32 +67,18 @@ describe Warden::OAuth2::Strategies::ResourceOwnerPasswordCredentials do
       allow(client_model).to receive_messages(locate: client_instance)
       allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'username', 'password' => 'password')
 
-      expect(client_instance).to receive(:valid?).with(username: 'username', password: 'password').and_return(false)
+      expect(client_instance).to receive(:valid?).with(username: 'username', password: 'password').and_return(true)
 
       subject._run!
     end
 
-    context 'when the client is valid and confirmed' do
-      it 'should succeed' do
-        client_instance = double(:client_instance, valid?: true, confirmed?: true)
-        allow(client_model).to receive_messages(locate: client_instance)
-        allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'username', 'password' => 'correct')
-        subject._run!
-        expect(subject.user).to eq(client_instance)
-        expect(subject.result).to eq(:success)
-      end
-    end
-
-    context 'when the client is valid but not confirmed' do
-      it 'should succeed' do
-        client_instance = double(:client_instance, valid?: true, confirmed?: false)
-        allow(client_model).to receive_messages(locate: client_instance)
-        allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'username', 'password' => 'correct')
-        subject._run!
-        expect(subject.error_status).to eq(401)
-        expect(subject.message).to eq('invalid_client')
-        expect(subject.error_description).to_not be_empty
-      end
+    it 'should succeed if client is around and valid' do
+      client_instance = double(:client_instance, valid?: true)
+      allow(client_model).to receive_messages(locate: client_instance)
+      allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'username', 'password' => 'correct')
+      subject._run!
+      expect(subject.user).to eq(client_instance)
+      expect(subject.result).to eq(:success)
     end
   end
 end

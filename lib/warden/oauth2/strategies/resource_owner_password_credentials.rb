@@ -17,15 +17,13 @@ module Warden
         def client_authenticated
           if params['username'] && params['password']
             if client.valid?(username: params['username'], password: params['password'])
-              if client.confirmed?(username: params['username'])
-                super
-              else
+              super
+            elsif client.confirmed?(username: params['username'])
                 fail('invalid_client')
-                self.error_description = 'Please confirm your account prior to use our service'
-              end
+                self.error_description = 'Incorrect username or password'
             else
               fail('invalid_client')
-              self.error_description = 'Incorrect username or password'
+              self.error_description = 'Please confirm your account prior to use our service'
             end
           else
             fail('invalid_request')
