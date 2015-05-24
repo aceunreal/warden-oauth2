@@ -28,6 +28,18 @@ describe Warden::OAuth2::Strategies::ResourceOwnerPasswordCredentials do
 
   describe '#authenticate!' do
     context 'when the client is around but not valid' do
+      context 'when the client is neither valid nor confirmed' do
+        it 'should fail with incorrect username or password message' do
+          client_instance = double(:client_instance, valid?: false, confirmed?: false)
+          allow(client_model).to receive_messages(locate: client_instance)
+          allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'someuser', 'password' => 'incorrect')
+          subject._run!
+          expect(subject.error_status).to eq(401)
+          expect(subject.message).to eq('invalid_client')
+          expect(subject.error_description).to eq('Incorrect username or password')
+        end
+      end
+
       context 'when the client is confirmed' do
         it 'should fail with incorrect username or password message' do
           client_instance = double(:client_instance, valid?: false, confirmed?: true)
@@ -42,7 +54,7 @@ describe Warden::OAuth2::Strategies::ResourceOwnerPasswordCredentials do
 
       context 'when the client is not confirmed' do
         it 'should fail with a please confirm your account message' do
-          client_instance = double(:client_instance, valid?: false, confirmed?: false)
+          client_instance = double(:client_instance, valid?: true, confirmed?: false)
           allow(client_model).to receive_messages(locate: client_instance)
           allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'someuser', 'password' => 'incorrect')
           subject._run!
@@ -68,12 +80,13 @@ describe Warden::OAuth2::Strategies::ResourceOwnerPasswordCredentials do
       allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'username', 'password' => 'password')
 
       expect(client_instance).to receive(:valid?).with(username: 'username', password: 'password').and_return(true)
+      expect(client_instance).to receive(:confirmed?).with(username: 'username').and_return(true)
 
       subject._run!
     end
 
     it 'should succeed if client is around and valid' do
-      client_instance = double(:client_instance, valid?: true)
+      client_instance = double(:client_instance, valid?: true, confirmed?: true)
       allow(client_model).to receive_messages(locate: client_instance)
       allow(subject).to receive(:params).and_return('client_id' => 'awesome', 'username' => 'username', 'password' => 'correct')
       subject._run!
