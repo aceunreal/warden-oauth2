@@ -7,13 +7,15 @@ module Warden
       attr_accessor :client_credentials_model,
                     :resource_owner_password_credentials_model,
                     :token_model,
-                    :refresh_token_model
+                    :refresh_token_model,
+                    :facebook_access_token_model
 
       def initialize
         self.client_credentials_model = ClientCredentialsApplication if defined?(ClientCredentialsApplication)
         self.resource_owner_password_credentials_model = ResourceOwnerPasswordCredentialsApplication if defined?(ResourceOwnerPasswordCredentialsApplication)
         self.refresh_token_model = RefreshTokenApplication if defined?(RefreshTokenApplication)
         self.token_model = AccessToken if defined?(AccessToken)
+        self.facebook_access_token_model = FacebookAccessToken if defined?(FacebookAccessToken)
       end
     end
 
@@ -37,6 +39,7 @@ module Warden
       autoload :AccessingProtectedResource, 'warden/oauth2/strategies/accessing_protected_resource'
       autoload :Bearer, 'warden/oauth2/strategies/bearer'
       autoload :RefreshToken, 'warden/oauth2/strategies/refresh_token'
+      autoload :FacebookAccessToken, 'warden/oauth2/strategies/facebook_access_token'
     end
   end
 end
