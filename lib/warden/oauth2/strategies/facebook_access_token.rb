@@ -16,10 +16,10 @@ module Warden
 
         def client_authenticated
           token = params['fb_access_token']
-          
+
           fail('invalid_token') && return unless token
 
-          if client.valid?(token)
+          if client.valid?(fb_access_token: token)
             super
           else
             fail('invalid_token') && return
